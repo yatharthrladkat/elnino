@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common hardened validation helpers
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Entity validator: User profile
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email'])
+        && data.keys().hasOnly(['uid', 'email', 'name', 'role', 'createdAt'])
+        && data.uid is string && data.uid.size() > 0 && data.uid.size() <= 128
+        && data.email is string && data.email.size() > 3 && data.email.size() <= 256
+        && (!('name' in data) || (data.name is string && data.name.size() <= 128))
+        && (!('role' in data) || (data.role is string && data.role.size() <= 128))
+        && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    // Entity validator: Allocation Run
+    function isValidAllocationRun(data) {
+      return data.keys().hasAll(['runId', 'title', 'officerName', 'totalBudgetCr', 'status'])
+        && data.runId is string && data.runId.size() > 0 && data.runId.size() <= 64
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 256
+        && data.officerName is string && data.officerName.size() > 0 && data.officerName.size() <= 128
+        && data.totalBudgetCr is number
+        && data.status is string && data.status.size() > 0 && data.status.size() <= 64
+        && (!('officerRole' in data) || (data.officerRole is string && data.officerRole.size() <= 128))
+        && (!('geography' in data) || (data.geography is string && data.geography.size() <= 128))
+        && (!('objective' in data) || (data.objective is string && data.objective.size() <= 128))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 1024))
+        && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    // Entity validator: Audit Event (Immutable)
+    function isValidAuditEvent(data) {
+      return data.keys().hasAll(['eventId', 'actor', 'action', 'target', 'details'])
+        && data.eventId is string && data.eventId.size() > 0 && data.eventId.size() <= 64
+        && data.actor is string && data.actor.size() > 0 && data.actor.size() <= 128
+        && data.action is string && data.action.size() > 0 && data.action.size() <= 128
+        && data.target is string && data.target.size() > 0 && data.target.size() <= 128
+        && data.details is string && data.details.size() > 0 && data.details.size() <= 1024
+        && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    // Entity validator: Farmer Claim
+    function isValidFarmerClaim(data) {
+      return data.keys().hasAll(['claimId', 'farmerName', 'district', 'claimedLoss', 'spectralLossIndex', 'status'])
+        && data.claimId is string && data.claimId.size() > 0 && data.claimId.size() <= 64
+        && data.farmerName is string && data.farmerName.size() > 0 && data.farmerName.size() <= 128
+        && data.district is string && data.district.size() > 0 && data.district.size() <= 128
+        && data.claimedLoss is number
+        && data.spectralLossIndex is number
+        && data.status is string && data.status.size() > 0 && data.status.size() <= 64
+        && (!('taluka' in data) || (data.taluka is string && data.taluka.size() <= 128))
+        && (!('confidence' in data) || data.confidence is number)
+        && (!('plotSizeHectares' in data) || data.plotSizeHectares is number)
+        && (!('cropType' in data) || (data.cropType is string && data.cropType.size() <= 64))
+        && (!('submissionDate' in data) || (data.submissionDate is string && data.submissionDate.size() <= 64))
+        && (!('authorizedBy' in data) || (data.authorizedBy is string && data.authorizedBy.size() <= 128))
+        && (!('authorizedAt' in data) || (data.authorizedAt is string && data.authorizedAt.size() <= 64));
+    }
+
+    // 1. Users Collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId);
+      allow list: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(userId) && request.auth.uid == userId
+        && isValidUser(incoming()) && incoming().uid == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(userId) && request.auth.uid == userId
+        && isValidUser(incoming()) && incoming().uid == existing().uid
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role']);
+      allow delete: if false;
+    }
+
+    // 2. Allocation Runs Collection
+    match /allocation_runs/{runId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(runId)
+        && isValidAllocationRun(incoming()) && incoming().runId == runId;
+      allow update: if isSignedIn() && isValidId(runId)
+        && isValidAllocationRun(incoming()) && incoming().runId == existing().runId;
+      allow delete: if isSignedIn() && isValidId(runId);
+    }
+
+    // 3. Audit Events Collection (Strictly Append-Only)
+    match /audit_events/{eventId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(eventId)
+        && isValidAuditEvent(incoming()) && incoming().eventId == eventId;
+      allow update, delete: if false;
+    }
+
+    // 4. Farmer Distress Claims Collection
+    match /farmer_claims/{claimId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(claimId)
+        && isValidFarmerClaim(incoming()) && incoming().claimId == claimId;
+      allow update: if isSignedIn() && isValidId(claimId)
+        && isValidFarmerClaim(incoming()) && incoming().claimId == existing().claimId
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'authorizedBy', 'authorizedAt', 'confidence']);
+      allow delete: if false;
+    }
+  }
+}

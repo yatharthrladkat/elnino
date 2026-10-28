@@ -1,0 +1,26 @@
+[
+  {
+    "id": "evt-1793172057881",
+    "timestamp": "2026-10-28T07:20:57.872Z",
+    "actor": "Yatharth Ladkat (State Disaster Management Authority)",
+    "action": "ALLOCATION_COMMITTED",
+    "target": "EPE-MP-2026-1438",
+    "details": "Committed ₹145 Cr allocation across 8 districts."
+  },
+  {
+    "id": "evt-001",
+    "timestamp": "2026-10-26T07:20:47.538Z",
+    "actor": "Yatharth Ladkat (Relief Officer)",
+    "action": "ALLOCATION_COMMITTED",
+    "target": "EPE-MP-2026-OCT-01",
+    "details": "Approved ₹140 Cr multi-district preemptive relief allocation under State Scarcity Manual."
+  },
+  {
+    "id": "evt-002",
+    "timestamp": "2026-10-27T07:20:47.538Z",
+    "actor": "Agro-Met Telemetry Daemon",
+    "action": "SATELLITE_SYNC",
+    "target": "ISRO VEDAS / Open-Meteo",
+    "details": "Synchronized SPI-3M and root-zone soil moisture indices across 8 Madhya Pradesh pilot districts."
+  }
+]

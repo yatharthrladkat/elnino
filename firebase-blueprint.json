@@ -1,0 +1,88 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile for State Relief and Disaster Management Officers",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "description": "Firebase Auth UID" },
+        "email": { "type": "string", "maxLength": 256, "description": "Officer official email address" },
+        "name": { "type": "string", "maxLength": 128, "description": "Officer full display name" },
+        "role": { "type": "string", "maxLength": 128, "description": "Government role and jurisdiction designation" },
+        "createdAt": { "type": "string", "maxLength": 64, "description": "Timestamp ISO string of profile creation" }
+      },
+      "required": ["uid", "email"]
+    },
+    "AllocationRun": {
+      "title": "AllocationRun",
+      "description": "MILP Preemption Relief Allocation Plan ledger run record",
+      "type": "object",
+      "properties": {
+        "runId": { "type": "string", "maxLength": 64, "description": "Unique run identifier e.g. EPE-MP-2026-..." },
+        "title": { "type": "string", "maxLength": 256, "description": "Plan title or designation" },
+        "officerName": { "type": "string", "maxLength": 128, "description": "Authorizing disaster management officer" },
+        "officerRole": { "type": "string", "maxLength": 128, "description": "Officer organizational role" },
+        "geography": { "type": "string", "maxLength": 128, "description": "Jurisdiction region e.g. Madhya Pradesh" },
+        "totalBudgetCr": { "type": "number", "description": "Allocated budget in Crores INR" },
+        "objective": { "type": "string", "maxLength": 128, "description": "Optimization objective preset" },
+        "status": { "type": "string", "maxLength": 64, "description": "Dispatch and approval status" },
+        "notes": { "type": "string", "maxLength": 1024, "description": "Operational notes or justification" },
+        "createdAt": { "type": "string", "maxLength": 64, "description": "Creation timestamp" }
+      },
+      "required": ["runId", "title", "officerName", "totalBudgetCr", "status"]
+    },
+    "AuditEvent": {
+      "title": "AuditEvent",
+      "description": "Immutable administrative audit log trail event",
+      "type": "object",
+      "properties": {
+        "eventId": { "type": "string", "maxLength": 64, "description": "Unique event identifier" },
+        "actor": { "type": "string", "maxLength": 128, "description": "Officer or system component performing the action" },
+        "action": { "type": "string", "maxLength": 128, "description": "Type of administrative action taken" },
+        "target": { "type": "string", "maxLength": 128, "description": "Entity or claim targeted by the action" },
+        "details": { "type": "string", "maxLength": 1024, "description": "Contextual description of the event" },
+        "createdAt": { "type": "string", "maxLength": 64, "description": "ISO timestamp of event occurrence" }
+      },
+      "required": ["eventId", "actor", "action", "target", "details"]
+    },
+    "FarmerClaim": {
+      "title": "FarmerClaim",
+      "description": "PMFBY crop distress verification claim with spectral analysis",
+      "type": "object",
+      "properties": {
+        "claimId": { "type": "string", "maxLength": 64, "description": "Unique PMFBY claim identifier" },
+        "farmerName": { "type": "string", "maxLength": 128, "description": "Name of claimant farmer" },
+        "district": { "type": "string", "maxLength": 128, "description": "District in jurisdiction" },
+        "taluka": { "type": "string", "maxLength": 128, "description": "Administrative sub-district block" },
+        "claimedLoss": { "type": "number", "description": "Farmer-declared crop loss percentage" },
+        "spectralLossIndex": { "type": "number", "description": "Satellite spectral loss index percentage" },
+        "status": { "type": "string", "maxLength": 64, "description": "Approval review status" },
+        "confidence": { "type": "number", "description": "Confidence percentage of spectral match" },
+        "plotSizeHectares": { "type": "number", "description": "Cultivated parcel size in hectares" },
+        "cropType": { "type": "string", "maxLength": 64, "description": "Primary crop type" },
+        "submissionDate": { "type": "string", "maxLength": 64, "description": "Date of claim filing" },
+        "authorizedBy": { "type": "string", "maxLength": 128, "description": "Reviewing officer name" },
+        "authorizedAt": { "type": "string", "maxLength": 64, "description": "Authorization ISO timestamp" }
+      },
+      "required": ["claimId", "farmerName", "district", "claimedLoss", "spectralLossIndex", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile collection for authenticated disaster management officers"
+    },
+    "/allocation_runs/{runId}": {
+      "schema": "AllocationRun",
+      "description": "Collection of committed preemptive relief allocation runs"
+    },
+    "/audit_events/{eventId}": {
+      "schema": "AuditEvent",
+      "description": "Append-only immutable system and officer audit trail"
+    },
+    "/farmer_claims/{claimId}": {
+      "schema": "FarmerClaim",
+      "description": "Satellite-verified crop distress claims"
+    }
+  }
+}
